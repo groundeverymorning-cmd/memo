@@ -66,6 +66,8 @@
             font-family: inherit;
             background: white;
             color: #202124;
+            /* 🎯 접근성: 터치 타겟 크기 (최소 44px) */
+            min-height: 44px;
         }
         input:focus {
             outline: none;
@@ -73,10 +75,12 @@
             box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
         }
         input::placeholder {
-            color: #9aa0a6;
+            /* 🎯 접근성: 색상 대비 개선 (#9aa0a6 → #5f6368) */
+            color: #5f6368;
+            opacity: 0.9;
         }
         button {
-            padding: 10px 24px;
+            padding: 12px 24px;
             background: #4285f4;
             color: white;
             border: none;
@@ -86,6 +90,8 @@
             font-weight: 500;
             font-family: inherit;
             transition: all 0.2s;
+            /* 🎯 접근성: 터치 타겟 크기 (최소 44px) */
+            min-height: 44px;
         }
         button:hover:not(:disabled) {
             background: #3367d6;
@@ -93,7 +99,9 @@
         }
         button:active { background: #1f56c9; }
         button:disabled {
-            opacity: 0.5;
+            /* 🎯 접근성: 색상 대비 개선 (opacity → 실제 색상 변경) */
+            background: #dadce0;
+            color: #5f6368;
             cursor: not-allowed;
         }
         .memos {
@@ -126,7 +134,7 @@
         }
         .delete-btn {
             background: #ea4335;
-            padding: 6px 16px;
+            padding: 8px 16px;
             font-size: 12px;
             margin-left: 12px;
             white-space: nowrap;
@@ -136,6 +144,10 @@
             border: none;
             cursor: pointer;
             transition: all 0.2s;
+            /* 🎯 접근성: 터치 타겟 최소 크기 */
+            min-height: 36px;
+            display: flex;
+            align-items: center;
         }
         .delete-btn:hover {
             background: #d33426;
