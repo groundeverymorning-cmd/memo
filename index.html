@@ -161,7 +161,7 @@
     </div>
 
     <script>
-        // 설정
+        // 설정 (⚠️ 본 환경에서는 환경변수로 관리: process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
         const SUPABASE_URL = 'https://zzefmhesoxbvrfqdvcuh.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_A46fGSuL4_A5FUEqWws_HQ_M2NzkDkn';
 
@@ -292,6 +292,12 @@
         // 메모 삭제
         async function deleteMemoItem(id) {
             if (!sbClient) return;
+
+            // 🔒 삭제 확인 대화 - 실수 방지
+            if (!confirm('이 메모를 정말 삭제하시겠습니까?')) {
+                console.log('삭제 취소됨');
+                return;
+            }
 
             try {
                 console.log('메모 삭제 중, ID:', id);
