@@ -39,26 +39,6 @@
             font-weight: 700;
         }
 
-        .status-bar {
-            height: 24px;
-            margin-bottom: 20px;
-            font-size: 12px;
-        }
-
-        .error {
-            background: #ffe0e0;
-            color: #c00;
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        .success {
-            background: #e0ffe0;
-            color: #060;
-            padding: 10px;
-            border-radius: 8px;
-        }
-
         .input-group {
             display: flex;
             gap: 12px;
@@ -121,6 +101,7 @@
             border: 1px solid #f0e6d2;
             border-radius: 12px;
             word-break: break-word;
+            margin-bottom: 12px;
             transition: all 0.2s;
         }
 
@@ -153,6 +134,7 @@
 
         .delete-btn:hover {
             background: #ff3333;
+            transform: scale(0.98);
         }
 
         .empty {
@@ -161,12 +143,30 @@
             padding: 50px 20px;
             font-size: 14px;
         }
+
+        .error {
+            background: #ffe0e0;
+            color: #c00;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+
+        .success {
+            background: #e0ffe0;
+            color: #060;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📝 메모장</h1>
-        <div id="status" class="status-bar"></div>
+        <div id="status"></div>
         <div class="input-group">
             <input
                 type="text"
@@ -189,77 +189,173 @@
         const statusDiv = document.getElementById('status');
 
         let supabase = null;
-        let memos = [];
         let isLoading = false;
+        let memos = [];
+
+        function validateEnv() {
+            console.log('=== 환경 변수 검증 ===');
+            console.log('SUPABASE_URL:', SUPABASE_URL);
+            console.log('SUPABASE_KEY:', SUPABASE_KEY);
+
+            if (!SUPABASE_URL || SUPABASE_URL === 'undefined') {
+                console.error('❌ SUPABASE_URL이 정의되지 않음');
+                return false;
+            }
+            if (!SUPABASE_KEY || SUPABASE_KEY === 'undefined') {
+                console.error('❌ SUPABASE_KEY가 정의되지 않음');
+                return false;
+            }
+            console.log('✅ 환경 변수 검증 완료\n');
+            return true;
+        }
+
+        async function testTableAccess() {
+            console.log('=== memos 테이블 접근 테스트 ===');
+            try {
+                const { data, error, status } = await supabase
+                    .from('memos')
+                    .select('count', { count: 'exact' })
+                    .limit(1);
+
+                if (error) {
+                    console.error('❌ 테이블 접근 실패');
+                    console.error('- Status:', status);
+                    console.error('- Code:', error.code);
+                    console.error('- Message:', error.message);
+
+                    if (status === 401) {
+                        throw new Error('401 Unauthorized - API 키가 잘못됨');
+                    } else if (status === 403) {
+                        throw new Error('403 Forbidden - RLS 권한 없음 (익명 사용자 차단)');
+                    } else if (error.code === 'PGRST116') {
+                        throw new Error('테이블 "memos"가 존재하지 않음');
+                    } else {
+                        throw error;
+                    }
+                }
+                console.log('✅ memos 테이블 접근 성공\n');
+                return true;
+            } catch (err) {
+                console.error('테이블 테스트 오류:', err.message);
+                throw err;
+            }
+        }
 
         async function initSupabase() {
             try {
-                if (!window.supabase) throw new Error('Supabase library failed to load');
-                
+                console.log('=== Supabase 클라이언트 초기화 시작 ===\n');
+
+                if (!validateEnv()) {
+                    throw new Error('환경 변수 검증 실패');
+                }
+
+                if (!window.supabase) {
+                    throw new Error('Supabase 라이브러리가 로드되지 않음');
+                }
+                console.log('✅ Supabase 라이브러리 로드됨');
+
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                showStatus('✅ 연결 완료', 'success');
-                await loadMemos();
+                console.log('✅ Supabase 클라이언트 생성 완료');
+
+                await testTableAccess();
+
+                console.log('=== 초기화 완료 ===\n');
+                showStatus('✅ Supabase 연결 성공', 'success');
+                loadMemos();
             } catch (err) {
-                showStatus('❌ 오류: ' + err.message, 'error');
+                console.error('❌ Supabase 초기화 실패:', err.message);
+                console.error('전체 에러:', err);
+                showStatus('❌ 초기화 실패: ' + err.message, 'error');
             }
         }
 
-        function showStatus(msg, type) {
+        function showStatus(msg, type = 'error') {
             statusDiv.innerHTML = `<div class="${type}">${msg}</div>`;
-            if (type === 'success') {
-                setTimeout(() => statusDiv.innerHTML = '', 2000);
-            }
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
         }
 
         async function loadMemos() {
-            if (!supabase) return;
+            if (!supabase) {
+                console.error('Supabase 클라이언트가 초기화되지 않음');
+                return;
+            }
+
             try {
-                const { data, error } = await supabase
+                console.log('메모 조회 중...');
+                const { data, error, status } = await supabase
                     .from('memos')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (error) throw error;
+                if (error) {
+                    console.error('조회 에러 - Status:', status);
+                    console.error('- Code:', error.code);
+                    console.error('- Message:', error.message);
+                    throw error;
+                }
+
+                console.log('✅ 메모 조회 성공:', data?.length || 0, '개');
                 memos = data || [];
                 renderMemos();
             } catch (err) {
+                console.error('❌ loadMemos 실패:', err);
                 showStatus('❌ 조회 실패: ' + err.message, 'error');
-                memosList.innerHTML = '<div class="empty">데이터 로드 실패</div>';
+                memosList.innerHTML = `<div class="empty">데이터 로드 실패</div>`;
             }
         }
 
         function renderMemos() {
-            if (!memos.length) {
+            if (!memos || memos.length === 0) {
                 memosList.innerHTML = '<div class="empty">메모가 없습니다</div>';
                 return;
             }
-            memosList.innerHTML = memos.map(m => `
+
+            memosList.innerHTML = memos.map((memo) => `
                 <div class="memo">
-                    <span class="memo-text">${escapeHtml(m.content)}</span>
-                    <button class="delete-btn" onclick="deleteMemo(${m.id})">삭제</button>
+                    <span class="memo-text">${escapeHtml(memo.content)}</span>
+                    <button class="delete-btn" onclick="deleteMemo(${memo.id})">삭제</button>
                 </div>
             `).join('');
         }
 
         async function addMemo() {
-            if (isLoading || !supabase) return;
+            if (isLoading || !supabase) {
+                console.error('addMemo 불가: isLoading=' + isLoading + ', supabase=' + !!supabase);
+                return;
+            }
+
             const text = memoInput.value.trim();
-            if (!text) return;
+            if (!text) {
+                console.warn('빈 입력은 저장 안 함');
+                return;
+            }
 
             isLoading = true;
             addBtn.disabled = true;
 
             try {
-                const { error } = await supabase
+                console.log('메모 추가 중:', text);
+                const { data, error, status } = await supabase
                     .from('memos')
-                    .insert([{ content: text }]);
+                    .insert([{ content: text }])
+                    .select();
 
-                if (error) throw error;
+                if (error) {
+                    console.error('추가 에러 - Status:', status);
+                    console.error('- Code:', error.code);
+                    console.error('- Message:', error.message);
+                    throw error;
+                }
+
+                console.log('✅ 메모 추가 성공:', data);
                 memoInput.value = '';
                 showStatus('✅ 추가됨', 'success');
                 await loadMemos();
                 memoInput.focus();
             } catch (err) {
+                console.error('❌ addMemo 실패:', err);
                 showStatus('❌ 추가 실패: ' + err.message, 'error');
             } finally {
                 isLoading = false;
@@ -268,13 +364,30 @@
         }
 
         async function deleteMemo(id) {
-            if (!supabase) return;
+            if (!supabase) {
+                console.error('deleteMemo 불가: supabase 미초기화');
+                return;
+            }
+
             try {
-                const { error } = await supabase.from('memos').delete().eq('id', id);
-                if (error) throw error;
+                console.log('메모 삭제 중, ID:', id);
+                const { error, status } = await supabase
+                    .from('memos')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('삭제 에러 - Status:', status);
+                    console.error('- Code:', error.code);
+                    console.error('- Message:', error.message);
+                    throw error;
+                }
+
+                console.log('✅ 메모 삭제 성공, ID:', id);
                 showStatus('✅ 삭제됨', 'success');
                 await loadMemos();
             } catch (err) {
+                console.error('❌ deleteMemo 실패:', err);
                 showStatus('❌ 삭제 실패: ' + err.message, 'error');
             }
         }
@@ -286,10 +399,11 @@
         }
 
         addBtn.addEventListener('click', addMemo);
-        memoInput.addEventListener('keypress', e => {
+        memoInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addMemo();
         });
 
+        console.log('페이지 로드 완료 - Supabase 초기화 시작');
         initSupabase();
     </script>
 </body>
