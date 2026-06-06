@@ -6,12 +6,7 @@
     <title>메모장</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
             background: linear-gradient(135deg, #fff9e6 0%, #fffaf0 100%);
@@ -21,7 +16,6 @@
             align-items: center;
             padding: 20px;
         }
-
         .container {
             width: 100%;
             max-width: 500px;
@@ -30,7 +24,6 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
             padding: 40px;
         }
-
         h1 {
             font-size: 28px;
             margin-bottom: 30px;
@@ -38,31 +31,20 @@
             text-align: center;
             font-weight: 700;
         }
-
-        .input-group {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 30px;
-        }
-
+        .status { padding: 10px; margin-bottom: 20px; border-radius: 8px; font-size: 12px; }
+        .status.error { background: #ffe0e0; color: #c00; }
+        .status.success { background: #e0ffe0; color: #060; }
+        .input-group { display: flex; gap: 12px; margin-bottom: 30px; }
         input {
             flex: 1;
             padding: 14px 16px;
             border: 2px solid #f0f0f0;
             border-radius: 12px;
             font-size: 14px;
-            transition: all 0.3s;
             font-family: inherit;
             background: #fafafa;
         }
-
-        input:focus {
-            outline: none;
-            border-color: #ffcd00;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(255, 205, 0, 0.1);
-        }
-
+        input:focus { outline: none; border-color: #ffcd00; background: white; box-shadow: 0 0 0 4px rgba(255, 205, 0, 0.1); }
         button {
             padding: 14px 28px;
             background: #ffcd00;
@@ -72,26 +54,10 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: 700;
-            transition: all 0.3s;
         }
-
-        button:hover:not(:disabled) {
-            background: #ffc000;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 205, 0, 0.3);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .memos {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
+        button:hover:not(:disabled) { background: #ffc000; transform: translateY(-2px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .memos { display: flex; flex-direction: column; gap: 10px; }
         .memo {
             display: flex;
             justify-content: space-between;
@@ -101,23 +67,9 @@
             border: 1px solid #f0e6d2;
             border-radius: 12px;
             word-break: break-word;
-            margin-bottom: 12px;
-            transition: all 0.2s;
         }
-
-        .memo:hover {
-            background: #fff8f0;
-            border-color: #ffcd00;
-            box-shadow: 0 2px 8px rgba(255, 205, 0, 0.1);
-        }
-
-        .memo-text {
-            flex: 1;
-            color: #1a1a1a;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
+        .memo:hover { background: #fff8f0; border-color: #ffcd00; }
+        .memo-text { flex: 1; color: #1a1a1a; font-size: 14px; line-height: 1.6; }
         .delete-btn {
             background: #ff5a5a;
             padding: 8px 14px;
@@ -129,38 +81,9 @@
             font-weight: 600;
             border: none;
             cursor: pointer;
-            transition: all 0.2s;
         }
-
-        .delete-btn:hover {
-            background: #ff3333;
-            transform: scale(0.98);
-        }
-
-        .empty {
-            text-align: center;
-            color: #aaa;
-            padding: 50px 20px;
-            font-size: 14px;
-        }
-
-        .error {
-            background: #ffe0e0;
-            color: #c00;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 12px;
-        }
-
-        .success {
-            background: #e0ffe0;
-            color: #060;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 12px;
-        }
+        .delete-btn:hover { background: #ff3333; }
+        .empty { text-align: center; color: #aaa; padding: 50px 20px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -168,243 +91,178 @@
         <h1>📝 메모장</h1>
         <div id="status"></div>
         <div class="input-group">
-            <input
-                type="text"
-                id="memoInput"
-                placeholder="메모를 입력하세요..."
-                autocomplete="off"
-            >
+            <input type="text" id="memoInput" placeholder="메모를 입력하세요..." autocomplete="off">
             <button id="addBtn">추가</button>
         </div>
         <div class="memos" id="memosList"></div>
     </div>
 
     <script>
+        // 설정
         const SUPABASE_URL = 'https://zzefmhesoxbvrfqdvcuh.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_A46fGSuL4_A5FUEqWws_HQ_M2NzkDkn';
 
+        // DOM 요소
         const memoInput = document.getElementById('memoInput');
         const addBtn = document.getElementById('addBtn');
         const memosList = document.getElementById('memosList');
         const statusDiv = document.getElementById('status');
 
-        let supabase = null;
-        let isLoading = false;
-        let memos = [];
+        // 상태 변수
+        let sbClient = null;
+        let memoList = [];
+        let loading = false;
 
-        function validateEnv() {
-            console.log('=== 환경 변수 검증 ===');
-            console.log('SUPABASE_URL:', SUPABASE_URL);
-            console.log('SUPABASE_KEY:', SUPABASE_KEY);
+        console.log('=== 메모 앱 시작 ===');
 
-            if (!SUPABASE_URL || SUPABASE_URL === 'undefined') {
-                console.error('❌ SUPABASE_URL이 정의되지 않음');
-                return false;
-            }
-            if (!SUPABASE_KEY || SUPABASE_KEY === 'undefined') {
-                console.error('❌ SUPABASE_KEY가 정의되지 않음');
-                return false;
-            }
-            console.log('✅ 환경 변수 검증 완료\n');
-            return true;
-        }
-
-        async function testTableAccess() {
-            console.log('=== memos 테이블 접근 테스트 ===');
+        // Supabase 초기화
+        async function init() {
             try {
-                const { data, error, status } = await supabase
+                console.log('Supabase 초기화 중...');
+
+                if (!window.supabase) {
+                    throw new Error('Supabase 라이브러리 로드 실패');
+                }
+
+                sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase 클라이언트 생성 완료');
+
+                // 테이블 접근 테스트
+                const { data, error } = await sbClient
                     .from('memos')
                     .select('count', { count: 'exact' })
                     .limit(1);
 
                 if (error) {
-                    console.error('❌ 테이블 접근 실패');
-                    console.error('- Status:', status);
-                    console.error('- Code:', error.code);
-                    console.error('- Message:', error.message);
-
-                    if (status === 401) {
-                        throw new Error('401 Unauthorized - API 키가 잘못됨');
-                    } else if (status === 403) {
-                        throw new Error('403 Forbidden - RLS 권한 없음 (익명 사용자 차단)');
-                    } else if (error.code === 'PGRST116') {
-                        throw new Error('테이블 "memos"가 존재하지 않음');
-                    } else {
-                        throw error;
-                    }
+                    console.error('❌ 테이블 접근 실패:', error.message);
+                    showStatus('테이블 접근 실패: ' + error.message, 'error');
+                    return;
                 }
-                console.log('✅ memos 테이블 접근 성공\n');
-                return true;
+
+                console.log('✅ memos 테이블 접근 성공');
+                showStatus('✅ Supabase 연결 완료', 'success');
+
+                loadMemoList();
             } catch (err) {
-                console.error('테이블 테스트 오류:', err.message);
-                throw err;
+                console.error('❌ 초기화 실패:', err.message);
+                showStatus('초기화 실패: ' + err.message, 'error');
             }
         }
 
-        async function initSupabase() {
-            try {
-                console.log('=== Supabase 클라이언트 초기화 시작 ===\n');
-
-                if (!validateEnv()) {
-                    throw new Error('환경 변수 검증 실패');
-                }
-
-                if (!window.supabase) {
-                    throw new Error('Supabase 라이브러리가 로드되지 않음');
-                }
-                console.log('✅ Supabase 라이브러리 로드됨');
-
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('✅ Supabase 클라이언트 생성 완료');
-
-                await testTableAccess();
-
-                console.log('=== 초기화 완료 ===\n');
-                showStatus('✅ Supabase 연결 성공', 'success');
-                loadMemos();
-            } catch (err) {
-                console.error('❌ Supabase 초기화 실패:', err.message);
-                console.error('전체 에러:', err);
-                showStatus('❌ 초기화 실패: ' + err.message, 'error');
+        // 메시지 표시
+        function showStatus(msg, type) {
+            statusDiv.innerHTML = `<div class="status ${type}">${msg}</div>`;
+            if (type === 'success') {
+                setTimeout(() => { statusDiv.innerHTML = ''; }, 2000);
             }
         }
 
-        function showStatus(msg, type = 'error') {
-            statusDiv.innerHTML = `<div class="${type}">${msg}</div>`;
-            setTimeout(() => {
-                statusDiv.innerHTML = '';
-            }, 3000);
-        }
-
-        async function loadMemos() {
-            if (!supabase) {
-                console.error('Supabase 클라이언트가 초기화되지 않음');
-                return;
-            }
+        // 메모 목록 로드
+        async function loadMemoList() {
+            if (!sbClient) return;
 
             try {
                 console.log('메모 조회 중...');
-                const { data, error, status } = await supabase
+                const { data, error } = await sbClient
                     .from('memos')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    console.error('조회 에러 - Status:', status);
-                    console.error('- Code:', error.code);
-                    console.error('- Message:', error.message);
-                    throw error;
-                }
+                if (error) throw error;
 
-                console.log('✅ 메모 조회 성공:', data?.length || 0, '개');
-                memos = data || [];
-                renderMemos();
+                memoList = data || [];
+                console.log('✅ 메모 조회 완료:', memoList.length, '개');
+                renderList();
             } catch (err) {
-                console.error('❌ loadMemos 실패:', err);
-                showStatus('❌ 조회 실패: ' + err.message, 'error');
-                memosList.innerHTML = `<div class="empty">데이터 로드 실패</div>`;
+                console.error('❌ 조회 실패:', err.message);
+                showStatus('조회 실패: ' + err.message, 'error');
             }
         }
 
-        function renderMemos() {
-            if (!memos || memos.length === 0) {
+        // 메모 목록 렌더링
+        function renderList() {
+            if (memoList.length === 0) {
                 memosList.innerHTML = '<div class="empty">메모가 없습니다</div>';
                 return;
             }
 
-            memosList.innerHTML = memos.map((memo) => `
+            memosList.innerHTML = memoList.map(item => `
                 <div class="memo">
-                    <span class="memo-text">${escapeHtml(memo.content)}</span>
-                    <button class="delete-btn" onclick="deleteMemo(${memo.id})">삭제</button>
+                    <span class="memo-text">${escapeHTML(item.content)}</span>
+                    <button class="delete-btn" onclick="deleteMemoItem(${item.id})">삭제</button>
                 </div>
             `).join('');
         }
 
+        // 메모 추가
         async function addMemo() {
-            if (isLoading || !supabase) {
-                console.error('addMemo 불가: isLoading=' + isLoading + ', supabase=' + !!supabase);
-                return;
-            }
+            if (loading || !sbClient) return;
 
             const text = memoInput.value.trim();
-            if (!text) {
-                console.warn('빈 입력은 저장 안 함');
-                return;
-            }
+            if (!text) return;
 
-            isLoading = true;
+            loading = true;
             addBtn.disabled = true;
 
             try {
-                console.log('메모 추가 중:', text);
-                const { data, error, status } = await supabase
+                console.log('메모 추가 중...');
+                const { error } = await sbClient
                     .from('memos')
-                    .insert([{ content: text }])
-                    .select();
+                    .insert([{ content: text }]);
 
-                if (error) {
-                    console.error('추가 에러 - Status:', status);
-                    console.error('- Code:', error.code);
-                    console.error('- Message:', error.message);
-                    throw error;
-                }
+                if (error) throw error;
 
-                console.log('✅ 메모 추가 성공:', data);
+                console.log('✅ 메모 추가 완료');
                 memoInput.value = '';
                 showStatus('✅ 추가됨', 'success');
-                await loadMemos();
+                await loadMemoList();
                 memoInput.focus();
             } catch (err) {
-                console.error('❌ addMemo 실패:', err);
-                showStatus('❌ 추가 실패: ' + err.message, 'error');
+                console.error('❌ 추가 실패:', err.message);
+                showStatus('추가 실패: ' + err.message, 'error');
             } finally {
-                isLoading = false;
+                loading = false;
                 addBtn.disabled = false;
             }
         }
 
-        async function deleteMemo(id) {
-            if (!supabase) {
-                console.error('deleteMemo 불가: supabase 미초기화');
-                return;
-            }
+        // 메모 삭제
+        async function deleteMemoItem(id) {
+            if (!sbClient) return;
 
             try {
                 console.log('메모 삭제 중, ID:', id);
-                const { error, status } = await supabase
+                const { error } = await sbClient
                     .from('memos')
                     .delete()
                     .eq('id', id);
 
-                if (error) {
-                    console.error('삭제 에러 - Status:', status);
-                    console.error('- Code:', error.code);
-                    console.error('- Message:', error.message);
-                    throw error;
-                }
+                if (error) throw error;
 
-                console.log('✅ 메모 삭제 성공, ID:', id);
+                console.log('✅ 메모 삭제 완료');
                 showStatus('✅ 삭제됨', 'success');
-                await loadMemos();
+                await loadMemoList();
             } catch (err) {
-                console.error('❌ deleteMemo 실패:', err);
-                showStatus('❌ 삭제 실패: ' + err.message, 'error');
+                console.error('❌ 삭제 실패:', err.message);
+                showStatus('삭제 실패: ' + err.message, 'error');
             }
         }
 
-        function escapeHtml(text) {
+        // XSS 방지
+        function escapeHTML(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
+        // 이벤트 리스너
         addBtn.addEventListener('click', addMemo);
         memoInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addMemo();
         });
 
-        console.log('페이지 로드 완료 - Supabase 초기화 시작');
-        initSupabase();
+        // 페이지 로드 완료 후 초기화
+        init();
     </script>
 </body>
 </html>
