@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>메모</title>
+    <title>메모장</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -147,17 +147,53 @@
             padding: 40px 24px;
             font-size: 14px;
         }
+
+        /* 🎯 접근성: Screen reader only content */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* 🎯 접근성: 포커스 인디케이터 강화 */
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid #4285f4;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>메모</h1>
-        <div id="status"></div>
+
+        <!-- 🎯 접근성: 상태 메시지 - role="alert" 추가 -->
+        <output id="status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></output>
+
         <div class="input-group">
-            <input type="text" id="memoInput" placeholder="메모 추가..." autocomplete="off">
-            <button id="addBtn">추가</button>
+            <!-- 🎯 접근성: 입력창 레이블 추가 (화면 리더용) -->
+            <label for="memoInput" class="sr-only">메모 내용</label>
+            <input
+                type="text"
+                id="memoInput"
+                placeholder="메모 추가..."
+                autocomplete="off"
+                aria-describedby="memo-help"
+            >
+            <!-- 🎯 접근성: 도움말 텍스트 -->
+            <span id="memo-help" class="sr-only">메모를 입력하고 추가 버튼을 누르거나 Enter를 누르세요</span>
+
+            <button id="addBtn" aria-label="메모 추가">추가</button>
         </div>
-        <div class="memos" id="memosList"></div>
+
+        <!-- 🎯 접근성: 메모 목록 role 추가 -->
+        <div class="memos" id="memosList" role="list" aria-label="메모 목록"></div>
     </div>
 
     <script>
@@ -212,11 +248,15 @@
             }
         }
 
-        // 메시지 표시
+        // 메시지 표시 (🎯 접근성: aria-live로 자동 알림)
         function showStatus(msg, type) {
-            statusDiv.innerHTML = `<div class="status ${type}">${msg}</div>`;
+            statusDiv.innerHTML = msg;
+            statusDiv.className = type;
             if (type === 'success') {
-                setTimeout(() => { statusDiv.innerHTML = ''; }, 2000);
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                    statusDiv.className = '';
+                }, 2000);
             }
         }
 
@@ -249,10 +289,11 @@
                 return;
             }
 
+            // 🎯 접근성: role="listitem" 추가
             memosList.innerHTML = memoList.map(item => `
-                <div class="memo">
+                <div class="memo" role="listitem">
                     <span class="memo-text">${escapeHTML(item.content)}</span>
-                    <button class="delete-btn" onclick="deleteMemoItem(${item.id})">삭제</button>
+                    <button class="delete-btn" onclick="deleteMemoItem(${item.id})" aria-label="메모 삭제: ${escapeHTML(item.content).substring(0, 20)}...">삭제</button>
                 </div>
             `).join('');
         }
