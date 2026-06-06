@@ -135,51 +135,87 @@
         <div class="memos" id="memosList"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        const SUPABASE_URL = 'https://zzefmhesoxbvrfqdvcuh.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_A46fGSuL4_A5FUEqWws_HQ_M2NzkDkn';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const memoInput = document.getElementById('memoInput');
         const memosList = document.getElementById('memosList');
 
-        // localStorage에서 메모 불러오기
-        function loadMemos() {
-            const memos = JSON.parse(localStorage.getItem('memos')) || [];
-            renderMemos(memos);
+        let memos = [];
+
+        // Supabase에서 메모 불러오기
+        async function loadMemos() {
+            const { data, error } = await supabase
+                .from('memos')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading memos:', error);
+                memosList.innerHTML = '<div class="empty">데이터 로드 실패</div>';
+                return;
+            }
+
+            memos = data || [];
+            renderMemos();
         }
 
         // 메모 표시
-        function renderMemos(memos) {
+        function renderMemos() {
             if (memos.length === 0) {
                 memosList.innerHTML = '<div class="empty">메모가 없습니다</div>';
                 return;
             }
 
-            memosList.innerHTML = memos.map((memo, index) => `
+            memosList.innerHTML = memos.map((memo) => `
                 <div class="memo">
-                    <span class="memo-text">${escapeHtml(memo)}</span>
-                    <button class="delete-btn" onclick="deleteMemo(${index})">삭제</button>
+                    <span class="memo-text">${escapeHtml(memo.content)}</span>
+                    <button class="delete-btn" onclick="deleteMemo(${memo.id})">삭제</button>
                 </div>
             `).join('');
         }
 
         // 메모 추가
-        function addMemo() {
+        async function addMemo() {
             const text = memoInput.value.trim();
             if (!text) return;
 
-            const memos = JSON.parse(localStorage.getItem('memos')) || [];
-            memos.unshift(text);
-            localStorage.setItem('memos', JSON.stringify(memos));
+            memoInput.disabled = true;
+
+            const { error } = await supabase
+                .from('memos')
+                .insert([{ content: text }]);
+
+            memoInput.disabled = false;
+
+            if (error) {
+                console.error('Error adding memo:', error);
+                alert('메모 추가 실패');
+                return;
+            }
 
             memoInput.value = '';
-            loadMemos();
+            await loadMemos();
             memoInput.focus();
         }
 
         // 메모 삭제
-        function deleteMemo(index) {
-            const memos = JSON.parse(localStorage.getItem('memos')) || [];
-            memos.splice(index, 1);
-            localStorage.setItem('memos', JSON.stringify(memos));
-            loadMemos();
+        async function deleteMemo(id) {
+            const { error } = await supabase
+                .from('memos')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error deleting memo:', error);
+                alert('메모 삭제 실패');
+                return;
+            }
+
+            await loadMemos();
         }
 
         // XSS 방지
