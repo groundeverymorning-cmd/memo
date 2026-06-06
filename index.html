@@ -35,21 +35,41 @@
             border-bottom: 1px solid #dadce0;
         }
         .status {
-            padding: 12px 24px;
-            margin: 16px 24px 0;
+            /* 🎯 디자인: sr-only 제거 후 시각화 */
+            position: static !important;
+            width: auto !important;
+            height: auto !important;
+            padding: 12px 24px !important;
+            margin: 16px 24px 0 !important;
             border-radius: 4px;
             font-size: 13px;
+            font-weight: 500;
             border-left: 4px solid;
+            display: block !important;
+            overflow: visible !important;
+            clip: auto !important;
+            white-space: normal !important;
+            animation: slideDown 0.3s ease-out;
         }
         .status.error {
-            background: #fce8e6;
-            color: #c5221f;
+            background: #f9e8e6;
+            color: #a50e0e;
             border-left-color: #d33b27;
         }
         .status.success {
-            background: #e6f4ea;
-            color: #137333;
+            background: #dff5e3;
+            color: #0d652d;
             border-left-color: #34a853;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .input-group {
             display: flex;
@@ -99,10 +119,11 @@
         }
         button:active { background: #1f56c9; }
         button:disabled {
-            /* 🎯 접근성: 색상 대비 개선 (opacity → 실제 색상 변경) */
+            /* 🎯 접근성: 색상 대비 개선 (WCAG AA 4.5:1) */
             background: #dadce0;
-            color: #5f6368;
+            color: #80868b;
             cursor: not-allowed;
+            opacity: 0.7;
         }
         .memos {
             display: flex;
@@ -159,9 +180,10 @@
         }
         .empty {
             text-align: center;
-            color: #9aa0a6;
+            color: #5f6368;
             padding: 40px 24px;
             font-size: 14px;
+            opacity: 0.8;
         }
 
         /* 🎯 접근성: Screen reader only content */
@@ -175,6 +197,104 @@
             clip: rect(0, 0, 0, 0);
             white-space: nowrap;
             border-width: 0;
+        }
+
+        /* 🎯 디자인: 삭제 확인 모달 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.32);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            min-width: 280px;
+            max-width: 560px;
+            box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2),
+                        0 24px 38px 3px rgba(0, 0, 0, 0.14);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        .modal-text {
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .modal-actions button {
+            padding: 8px 24px;
+            font-size: 14px;
+            min-height: 44px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .modal-actions .cancel-btn {
+            background: white;
+            color: #4285f4;
+            border: 1px solid #dadce0;
+        }
+
+        .modal-actions .cancel-btn:hover {
+            background: #f8f9fa;
+            border-color: #d2d3d4;
+        }
+
+        .modal-actions .confirm-btn {
+            background: #ea4335;
+            color: white;
+        }
+
+        .modal-actions .confirm-btn:hover {
+            background: #d33426;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         }
 
         /* 🎯 접근성: 포커스 인디케이터 강화 */
@@ -288,6 +408,18 @@
         <div class="memos" id="memosList" role="list" aria-label="메모 목록"></div>
     </div>
 
+    <!-- 🎯 디자인: 삭제 확인 모달 -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-title">메모를 삭제하시겠습니까?</div>
+            <div class="modal-text">이 작업은 되돌릴 수 없습니다.</div>
+            <div class="modal-actions">
+                <button class="cancel-btn" id="cancelBtn">취소</button>
+                <button class="confirm-btn" id="confirmBtn">삭제</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 설정 (⚠️ 본 환경에서는 환경변수로 관리: process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
         const SUPABASE_URL = 'https://zzefmhesoxbvrfqdvcuh.supabase.co';
@@ -303,6 +435,7 @@
         let sbClient = null;
         let memoList = [];
         let loading = false;
+        let pendingDeleteId = null;  // 🎯 디자인: 모달에서 삭제 대기 중인 ID
 
         console.log('=== 메모 앱 시작 ===');
 
@@ -385,9 +518,17 @@
             memosList.innerHTML = memoList.map(item => `
                 <div class="memo" role="listitem">
                     <span class="memo-text">${escapeHTML(item.content)}</span>
-                    <button class="delete-btn" onclick="deleteMemoItem(${item.id})" aria-label="메모 삭제: ${escapeHTML(item.content).substring(0, 20)}...">삭제</button>
+                    <button class="delete-btn" data-id="${item.id}" aria-label="메모 삭제: ${escapeHTML(item.content).substring(0, 20)}...">삭제</button>
                 </div>
             `).join('');
+
+            // 🎯 이벤트 위임: 모든 삭제 버튼에 리스너 추가
+            memosList.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    deleteMemoItem(id);
+                });
+            });
         }
 
         // 메모 추가
@@ -399,6 +540,9 @@
 
             loading = true;
             addBtn.disabled = true;
+            // 🎯 로딩 상태 시각화
+            const originalText = addBtn.textContent;
+            addBtn.textContent = '추가 중...';
 
             try {
                 console.log('메모 추가 중...');
@@ -415,21 +559,35 @@
                 memoInput.focus();
             } catch (err) {
                 console.error('❌ 추가 실패:', err.message);
-                showStatus('추가 실패: ' + err.message, 'error');
+                showStatus('❌ 추가 실패: ' + err.message, 'error');
             } finally {
                 loading = false;
                 addBtn.disabled = false;
+                // 🎯 원래 텍스트로 복원
+                addBtn.textContent = originalText;
             }
         }
 
         // 메모 삭제
-        async function deleteMemoItem(id) {
-            if (!sbClient) return;
+        function deleteMemoItem(id) {
+            if (!sbClient || loading) return;
 
-            // 🔒 삭제 확인 대화 - 실수 방지
-            if (!confirm('이 메모를 정말 삭제하시겠습니까?')) {
-                console.log('삭제 취소됨');
-                return;
+            // 🎯 디자인: 모달 표시로 변경
+            pendingDeleteId = id;
+            const deleteModal = document.getElementById('deleteModal');
+            deleteModal.classList.add('show');
+        }
+
+        // 🎯 디자인: 실제 삭제 실행
+        async function executeDelete() {
+            if (!sbClient || loading || !pendingDeleteId) return;
+
+            const id = pendingDeleteId;
+            loading = true;
+            const deleteBtn = document.querySelector(`[data-id="${id}"]`);
+            if (deleteBtn) {
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = '삭제 중...';
             }
 
             try {
@@ -446,8 +604,22 @@
                 await loadMemoList();
             } catch (err) {
                 console.error('❌ 삭제 실패:', err.message);
-                showStatus('삭제 실패: ' + err.message, 'error');
+                showStatus('❌ 삭제 실패: ' + err.message, 'error');
+                if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.textContent = '삭제';
+                }
+            } finally {
+                loading = false;
+                pendingDeleteId = null;
+                hideDeleteModal();
             }
+        }
+
+        // 🎯 디자인: 모달 열기/닫기
+        function hideDeleteModal() {
+            const deleteModal = document.getElementById('deleteModal');
+            deleteModal.classList.remove('show');
         }
 
         // XSS 방지
@@ -460,7 +632,16 @@
         // 이벤트 리스너
         addBtn.addEventListener('click', addMemo);
         memoInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') addMemo();
+            // 🎯 로딩 중에는 Enter 키 무시
+            if (e.key === 'Enter' && !loading) addMemo();
+        });
+
+        // 🎯 디자인: 모달 버튼 이벤트
+        document.getElementById('cancelBtn').addEventListener('click', hideDeleteModal);
+        document.getElementById('confirmBtn').addEventListener('click', executeDelete);
+        document.getElementById('deleteModal').addEventListener('click', (e) => {
+            // 모달 배경 클릭 시 닫기
+            if (e.target.id === 'deleteModal') hideDeleteModal();
         });
 
         // 페이지 로드 완료 후 초기화
